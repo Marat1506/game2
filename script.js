@@ -30,7 +30,7 @@ function loadRewardedAd() {
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', () => {
     rec = loadRewardedAd()
-    console.lof("rec = ", rec)
+    console.log("rec = ", rec)
     startGame()
 });
 
