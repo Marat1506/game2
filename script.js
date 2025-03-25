@@ -134,7 +134,7 @@ function addExtraAttempts() {
             onAdShown: () => console.log("Вознаграждаемая реклама показана"),
             onAdClosed: (data) => {
                 console.log("Вознаграждаемая реклама закрыта:", data);
-                if (data.success) {
+                if (data && data.success) {
                     attemptsLeft += 3; // Добавляем попытки после просмотра рекламы
                     attemptsDisplay.textContent = attemptsLeft;
                     extraAttemptsButton.classList.add('hidden');
