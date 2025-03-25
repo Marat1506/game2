@@ -1,218 +1,105 @@
-// Глобальные переменные игры
 let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
-let sdkInitialized = false;
-let currentGameId = 0;
-let deferredPrompt = null; // Для PWA баннера
 
-// Элементы интерфейса
-const elements = {
-    mainMenu: document.getElementById('main-menu'),
-    gameScreen: document.getElementById('game-screen'),
-    gameOverScreen: document.getElementById('game-over-screen'),
-    playButton: document.getElementById('play-button'),
-    grid: document.getElementById('grid'),
-    attemptsDisplay: document.getElementById('attempts'),
-    feedback: document.getElementById('feedback'),
-    extraAttemptsButton: document.getElementById('extra-attempts'),
-    mainMenuButton: document.getElementById('main-menu-button'),
-    tryAgainButton: document.getElementById('try-again-button'),
-    gameOverMessage: document.getElementById('game-over-message'),
-    buyAttempts: document.getElementById('buy-attempts'),
-    buyWin: document.getElementById('buy-win'),
-    shop: document.getElementById('shop')
-};
+const mainMenu = document.getElementById('main-menu');
+const gameScreen = document.getElementById('game-screen');
+const gameOverScreen = document.getElementById('game-over-screen');
+const playButton = document.getElementById('play-button');
+const grid = document.getElementById('grid');
+const attemptsDisplay = document.getElementById('attempts');
+const feedback = document.getElementById('feedback');
+const extraAttemptsButton = document.getElementById('extra-attempts');
+const mainMenuButton = document.getElementById('main-menu-button');
+const tryAgainButton = document.getElementById('try-again-button');
+const gameOverMessage = document.getElementById('game-over-message');
 
-// Проверка third-party cookies
-function checkAndSetCookies() {
-    document.cookie = "ok_auth=1; SameSite=None; Secure";
-}
-
-// Инициализация OK SDK с обработкой ошибок
-function initOKSDK() {
-    return new Promise((resolve, reject) => {
-        if (typeof FAPI === 'undefined') {
-            console.error('Ошибка: FAPI не загружен');
-            reject(new Error('FAPI не загружен'));
-            return;
-        }
-
-        const rParams = FAPI.Util.getRequestParameters();
-        if (!rParams["api_server"] || !rParams["apiconnection"]) {
-            console.error('Ошибка параметров API');
-            reject(new Error('Ошибка параметров API'));
-            return;
-        }
-
-        FAPI.init(
-            rParams["api_server"], 
-            rParams["apiconnection"],
-            function() {
-                console.log('OK SDK успешно инициализирован');
-                sdkInitialized = true;
-                resolve(true);
-            },
-            function(error) {
-                console.error('Ошибка инициализации OK SDK:', error);
-                reject(error);
-            }
-        );
-    });
-}
-
-// Обработка платежей
-function processPayment(productId, amount, description, callback) {
-    if (!sdkInitialized) {
-        console.error('OK SDK не инициализирован');
-        callback(false);
-        return;
+var rParams = FAPI.Util.getRequestParameters();
+FAPI.init(rParams["api_server"], rParams["apiconnection"],
+    function (){
+    alert("Инициализация прошла успешно");
+    },
+    function (error) {
+    alert("Ошибка инициализации ")
     }
+    )
+// Обработчик кнопки "Играть"
+playButton.addEventListener('click', startGame);
 
-    FAPI.Client.call({
-        method: 'appTransactions.init',
-        params: {
-            product: productId,
-            amount: amount,
-            description: description
-        },
-        callback: function(response) {
-            if (response?.transaction_id) {
-                console.log('Платеж успешен:', response);
-                callback(true, response.transaction_id);
-            } else {
-                console.error('Ошибка платежа:', response);
-                callback(false);
-            }
-        }
-    });
-}
+// Обработчик кнопки "Попробовать еще"
+tryAgainButton.addEventListener('click', startGame);
 
-// Логика игры
+// Обработчик кнопки "Еще попытки"
+extraAttemptsButton.addEventListener('click', addExtraAttempts);
+
+// Обработчик кнопки "Главное меню"
+mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
+
+// Функция для начала игры
 function startGame() {
-    currentGameId = Date.now();
     targetNumber = Math.floor(Math.random() * 81) + 1;
     attemptsLeft = 5;
     extraAttemptsUsed = false;
-    updateUI();
+    attemptsDisplay.textContent = attemptsLeft;
+    feedback.textContent = '';
+    extraAttemptsButton.classList.add('hidden');
     generateGrid();
-    showScreen(elements.gameScreen);
+    showScreen(gameScreen);
 }
 
+// Функция для генерации игрового поля
 function generateGrid() {
-    elements.grid.innerHTML = '';
+    grid.innerHTML = '';
     for (let i = 1; i <= 81; i++) {
         const cell = document.createElement('div');
         cell.textContent = i;
         cell.addEventListener('click', () => handleGuess(i));
-        elements.grid.appendChild(cell);
+        grid.appendChild(cell);
     }
 }
 
+// Функция для обработки выбора числа
 function handleGuess(number) {
     if (number === targetNumber) {
-        elements.feedback.textContent = 'УГАДАЛИ!';
+        feedback.textContent = 'УГАДАЛИ!';
         endGame(true);
     } else {
-        elements.feedback.textContent = number < targetNumber ? 'БОЛЬШЕ!' : 'МЕНЬШЕ!';
+        feedback.textContent = number < targetNumber ? 'БОЛЬШЕ!' : 'МЕНЬШЕ!';
         attemptsLeft--;
-        updateUI();
-        
+        attemptsDisplay.textContent = attemptsLeft;
         if (attemptsLeft === 0) {
             endGame(false);
         } else if (attemptsLeft === 1 && !extraAttemptsUsed) {
-            elements.extraAttemptsButton.classList.remove('hidden');
+            extraAttemptsButton.classList.remove('hidden');
         }
     }
 }
 
-function updateUI() {
-    elements.attemptsDisplay.textContent = attemptsLeft;
-    elements.feedback.textContent = '';
+// Функция для добавления дополнительных попыток
+function addExtraAttempts() {
+    attemptsLeft += 3;
+    attemptsDisplay.textContent = attemptsLeft;
+    extraAttemptsButton.classList.add('hidden');
+    extraAttemptsUsed = true;
 }
 
+// Функция для завершения игры
 function endGame(won) {
-    elements.gameOverMessage.textContent = won
-        ? 'Поздравляем, вы угадали загаданное число!'
-        : 'Не угадали, в следующий раз повезет!';
-    showScreen(elements.gameOverScreen);
+    if (won) {
+        gameOverMessage.textContent = 'Поздравляем, вы угадали загаданное число!';
+    } else {
+        gameOverMessage.textContent = 'Не угадали, в следующий раз повезет!';
+    }
+    showScreen(gameOverScreen);
 }
 
+// Функция для переключения экранов
 function showScreen(screen) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    mainMenu.classList.add('hidden');
+    gameScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
     screen.classList.remove('hidden');
 }
 
-// Обработчики событий
-function setupEventListeners() {
-    elements.playButton.addEventListener('click', startGame);
-    elements.tryAgainButton.addEventListener('click', startGame);
-    elements.mainMenuButton.addEventListener('click', () => showScreen(elements.mainMenu));
-    
-    elements.extraAttemptsButton.addEventListener('click', () => {
-        attemptsLeft += 3;
-        elements.extraAttemptsButton.classList.add('hidden');
-        extraAttemptsUsed = true;
-        updateUI();
-    });
-
-    elements.buyAttempts.addEventListener('click', () => {
-        processPayment(`extra_attempts_${currentGameId}`, 59, '10 дополнительных попыток', (success) => {
-            if (success) {
-                attemptsLeft += 10;
-                elements.extraAttemptsButton.classList.add('hidden');
-                updateUI();
-                alert('Вы получили 10 дополнительных попыток!');
-            } else {
-                alert('Не удалось выполнить покупку. Попробуйте позже.');
-            }
-        });
-    });
-
-    elements.buyWin.addEventListener('click', () => {
-        processPayment(`instant_win_${currentGameId}`, 100, 'Гарантированный выигрыш', (success) => {
-            if (success) {
-                endGame(true);
-                alert('Поздравляем с победой!');
-            } else {
-                alert('Не удалось выполнить покупку. Попробуйте позже.');
-            }
-        });
-    });
-}
-
-// Обработчик PWA установки
-window.addEventListener('beforeinstallprompt', (event) => {
-    event.preventDefault();
-    deferredPrompt = event;
-    console.log('PWA может быть установлено');
-});
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    checkAndSetCookies(); // Проверяем и устанавливаем cookie
-
-    // Загрузка FAPI скрипта с обработкой ошибок
-    const script = document.createElement('script');
-    script.src = 'https://connect.ok.ru/connect.js';
-    script.async = true;
-    script.onload = () => {
-        console.log('FAPI загружен, инициализируем...');
-        initOKSDK()
-            .then(() => {
-                setupEventListeners();
-                showScreen(elements.mainMenu);
-            })
-            .catch(error => {
-                console.error('Ошибка инициализации SDK:', error);
-                setupEventListeners();
-                showScreen(elements.mainMenu);
-            });
-    };
-    script.onerror = () => {
-        console.error('Ошибка загрузки FAPI SDK');
-        setupEventListeners();
-        showScreen(elements.mainMenu);
-    };
-    document.head.appendChild(script);
-});
+// Показываем главное меню при загрузке
+showScreen(mainMenu);

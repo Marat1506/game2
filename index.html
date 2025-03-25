@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Угадай число</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://connect.ok.ru/connect.js"></script>
+    <script type="text/javascript" src="//api.ok.ru/js/fapi5.js" defer="defer"></script>
 </head>
 <body>
     <div id="main-menu" class="screen">
@@ -32,6 +32,12 @@
         <button id="try-again-button">ПОПРОБОВАТЬ ЕЩЕ</button>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        console.log("Загрузка FAPI...");
+        setTimeout(() => {
+            console.log("FAPI:", typeof FAPI !== "undefined" ? "Доступен" : "Не найден");
+        }, 3000);
+    </script>
+    <script defer src="script.js"></script>
 </body>
 </html>
