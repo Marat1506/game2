@@ -121,55 +121,76 @@ function handleGuess(number) {
 
 // Добавление дополнительных попыток
 // Добавление дополнительных попыток через вознаграждаемую рекламу
+// Добавление дополнительных попыток через вознаграждаемую рекламу
 function addExtraAttempts() {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
-        // В тестовых целях можно дать попытки даже без FAPI
-        attemptsLeft += 3;
-        attemptsDisplay.textContent = attemptsLeft;
-        extraAttemptsButton.classList.add('hidden');
-        extraAttemptsUsed = true;
+        // Для тестирования даем попытки даже без FAPI
+        giveExtraAttempts();
         return;
     }
 
-    FAPI.UI.showLoadedAd({
-        adType: 'rewarded',
-        callbacks: {
-            onAdLoaded: () => {
-                console.log("Вознаграждаемая реклама загружена");
-                // Можно добавить визуальную индикацию загрузки
-                feedback.textContent = 'Реклама загружена, готово к показу';
-            },
-            onAdShown: () => {
-                console.log("Вознаграждаемая реклама показана");
-                feedback.textContent = 'Смотрите рекламу для получения бонуса';
-            },
-            onAdClosed: (data) => {
-                console.log("Вознаграждаемая реклама закрыта:", data);
-                // Согласно документации, успешный показ имеет data = "ad_shown"
-                if (data === "ad_shown") {
-                    attemptsLeft += 3;
-                    attemptsDisplay.textContent = attemptsLeft;
-                    extraAttemptsButton.classList.add('hidden');
-                    extraAttemptsUsed = true;
-                    feedback.textContent = 'Вы получили 3 дополнительные попытки!';
-                    console.log("Игрок получил дополнительные попытки");
-                } else {
-                    feedback.textContent = 'Реклама не была досмотрена до конца';
-                    console.log("Реклама не была досмотрена до конца, бонус не выдан");
-                }
-            },
-            onAdError: (error) => {
-                console.error("Ошибка показа рекламы:", error);
-                feedback.textContent = 'Ошибка загрузки рекламы. Попробуйте позже.';
-                // Можно автоматически дать попытки при ошибке:
-                // attemptsLeft += 3;
-                // attemptsDisplay.textContent = attemptsLeft;
-                // extraAttemptsButton.classList.add('hidden');
-                // extraAttemptsUsed = true;
+    // Сначала загружаем рекламу
+    FAPI.UI.loadAd();
+
+    // Обрабатываем коллбеки через глобальную функцию API_callback
+    window.API_callback = function(method, result, data) {
+        console.log("API_callback:", method, result, data);
+
+        if (method === "loadAd") {
+            if (result === "ok" && data === "ready") {
+                // Реклама загружена, можно показывать
+                console.log("Реклама готова к показу");
+                feedback.textContent = "Реклама загружена...";
+
+                // Показываем рекламу через 1 секунду (можно сразу)
+                setTimeout(() => {
+                    FAPI.UI.showLoadedAd();
+                }, 1000);
+            } else {
+                console.log("Не удалось загрузить рекламу:", data);
+                feedback.textContent = "Ошибка загрузки рекламы";
             }
         }
-    });
+
+        if (method === "showLoadedAd") {
+            if (result === "ok") {
+                // Для web/mobile web
+                if (data === "complete") {
+                    console.log("Реклама полностью просмотрена (web)");
+                    giveExtraAttempts();
+                }
+                // Для Android
+                else if (data === "ad_shown") {
+                    console.log("Реклама полностью просмотрена (Android)");
+                    giveExtraAttempts();
+                }
+                // Дополнительное событие с форматом рекламы
+                else if (data && data.includes("rewarded")) {
+                    console.log("Реклама показана, формат:", data);
+                }
+            }
+            else if (result === "error") {
+                if (data === "skip") {
+                    console.log("Пользователь пропустил рекламу");
+                    feedback.textContent = "Вы пропустили рекламу и не получили бонус";
+                } else {
+                    console.log("Ошибка показа рекламы:", data);
+                    feedback.textContent = "Ошибка показа рекламы: " + data;
+                }
+            }
+        }
+    };
+}
+
+// Функция для выдачи награды
+function giveExtraAttempts() {
+    attemptsLeft += 3;
+    attemptsDisplay.textContent = attemptsLeft;
+    extraAttemptsButton.classList.add('hidden');
+    extraAttemptsUsed = true;
+    feedback.textContent = "Вы получили 3 дополнительные попытки!";
+    console.log("Дополнительные попытки выданы");
 }
 
 
