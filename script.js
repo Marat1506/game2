@@ -75,17 +75,18 @@ buyAttemptsButton.addEventListener('click', () => {
     }
 
     try {
-        FAPI.UI.showPayment(
-            "10 попыток",                  // name
-            "Дополнительные попытки для игры", // description
-            "attempts_10",                // code
-            59,                           // price (в OK)
-            null,                         // options
-            null,                         // attributes
-            "ok",                         // currency
-            true,                         // callback (не обновлять страницу)
-            null                          // uiConf
-        );
+        // FAPI.UI.showPayment(
+        //     "10 попыток",                  // name
+        //     "Дополнительные попытки для игры", // description
+        //     "attempts_10",                // code
+        //     59,                           // price (в OK)
+        //     null,                         // options
+        //     null,                         // attributes
+        //     "ok",                         // currency
+        //     true,                         // callback (не обновлять страницу)
+        //     null                          // uiConf
+        // );
+        FAPI.UI.showPayment("Яблоко", "Это очень вкусно!", 777, 1, null, null, "ok", "true");
     } catch (e) {
         console.error("Ошибка при вызове платежа:", e);
         feedback.textContent = "Ошибка инициализации платежа";
