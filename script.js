@@ -23,8 +23,16 @@ FAPI.init(rParams["api_server"], rParams["apiconnection"],
     alert("Ошибка инициализации ")
     }
     )
+
+function loadRewardedAd() {
+    FAPI.UI.loadAd();
+}
 // Обработчик кнопки "Играть"
-playButton.addEventListener('click', startGame);
+playButton.addEventListener('click', () => {
+    rec = loadRewardedAd()
+    console.lof("rec = ", rec)
+    startGame()
+});
 
 // Обработчик кнопки "Попробовать еще"
 tryAgainButton.addEventListener('click', startGame);
