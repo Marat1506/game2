@@ -67,9 +67,26 @@ function showRegularAd() {
 }
 buyAttemptsButton.addEventListener('click', () => {
     // Логика покупки попыток
-    attemptsLeft += 10;
-    attemptsDisplay.textContent = attemptsLeft;
-    feedback.textContent = 'Вы купили 10 дополнительных попыток!';
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("Покупка FAPI.UI не доступен");
+        // Для тестирования даем попытки даже без FAPI
+        attemptsLeft += 10;
+        attemptsDisplay.textContent = attemptsLeft;
+        feedback.textContent = 'Вы купили 10 дополнительных попыток!';
+        return;
+    }
+
+    // Параметры платежа за попытки
+    FAPI.UI.showPayment(
+        "10 дополнительных попыток",  // Название товара
+        "Позволяют продолжить игру",  // Описание
+        "extra_attempts_10",          // Код товара
+        59,                          // Цена в OK
+        null,                        // Опции (устарело)
+        null,                        // Атрибуты
+        "ok",                        // Валюта
+        "true"                       // Не обновлять приложение после платежа
+    );
 });
 
 buyWinButton.addEventListener('click', () => {
