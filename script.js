@@ -14,16 +14,25 @@ const mainMenuButton = document.getElementById('main-menu-button');
 const tryAgainButton = document.getElementById('try-again-button');
 const gameOverMessage = document.getElementById('game-over-message');
 
-// Инициализация FAPI
-var rParams = FAPI.Util.getRequestParameters();
-FAPI.init(rParams["api_server"], rParams["apiconnection"],
-    function() {
-        console.log("FAPI успешно инициализирован");
-    },
-    function(error) {
-        console.error("Ошибка инициализации FAPI:", error);
-    }
-);
+// Глобальный callback для FAPI
+window.API_callback = function(method, result, data) {
+    console.log("API_callback:", method, result, data);
+};
+
+// Проверяем, загружен ли FAPI, прежде чем инициализировать
+if (typeof FAPI !== 'undefined' && FAPI.Util) {
+    var rParams = FAPI.Util.getRequestParameters();
+    FAPI.init(rParams["api_server"], rParams["apiconnection"],
+        function() {
+            console.log("FAPI успешно инициализирован");
+        },
+        function(error) {
+            console.error("Ошибка инициализации FAPI:", error);
+        }
+    );
+} else {
+    console.warn("FAPI не загружен");
+}
 
 // Функция для показа обычной рекламы
 function showRegularAd() {
@@ -56,10 +65,8 @@ function showRegularAd() {
 playButton.addEventListener('click', async () => {
     try {
         await showRegularAd();
-
     } catch (error) {
         console.error("Ошибка при показе рекламы, начинаем игру", error);
-        // startGame();
     }
     startGame();
 });
@@ -81,7 +88,7 @@ function startGame() {
     showScreen(gameScreen);
 }
 
-// Остальные функции без изменений
+// Функция генерации сетки
 function generateGrid() {
     grid.innerHTML = '';
     for (let i = 1; i <= 81; i++) {
@@ -92,6 +99,7 @@ function generateGrid() {
     }
 }
 
+// Обработка попыток угадать число
 function handleGuess(number) {
     if (number === targetNumber) {
         feedback.textContent = 'УГАДАЛИ!';
@@ -108,6 +116,7 @@ function handleGuess(number) {
     }
 }
 
+// Добавление дополнительных попыток
 function addExtraAttempts() {
     attemptsLeft += 3;
     attemptsDisplay.textContent = attemptsLeft;
@@ -115,15 +124,15 @@ function addExtraAttempts() {
     extraAttemptsUsed = true;
 }
 
+// Завершение игры
 function endGame(won) {
-    if (won) {
-        gameOverMessage.textContent = 'Поздравляем, вы угадали загаданное число!';
-    } else {
-        gameOverMessage.textContent = 'Не угадали, в следующий раз повезет!';
-    }
+    gameOverMessage.textContent = won
+        ? 'Поздравляем, вы угадали загаданное число!'
+        : 'Не угадали, в следующий раз повезет!';
     showScreen(gameOverScreen);
 }
 
+// Переключение экранов
 function showScreen(screen) {
     mainMenu.classList.add('hidden');
     gameScreen.classList.add('hidden');
