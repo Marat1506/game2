@@ -4,6 +4,7 @@ let attemptsLeft;
 let extraAttemptsUsed = false;
 let sdkInitialized = false;
 let currentGameId = 0;
+let deferredPrompt = null; // Для PWA баннера
 
 // Элементы интерфейса
 const elements = {
@@ -23,21 +24,23 @@ const elements = {
     shop: document.getElementById('shop')
 };
 
-// Проверка third-party cookies и установка заголовка
+// Проверка third-party cookies
 function checkAndSetCookies() {
     document.cookie = "ok_auth=1; SameSite=None; Secure";
 }
 
-// Инициализация OK SDK
+// Инициализация OK SDK с обработкой ошибок
 function initOKSDK() {
     return new Promise((resolve, reject) => {
         if (typeof FAPI === 'undefined') {
+            console.error('Ошибка: FAPI не загружен');
             reject(new Error('FAPI не загружен'));
             return;
         }
 
         const rParams = FAPI.Util.getRequestParameters();
         if (!rParams["api_server"] || !rParams["apiconnection"]) {
+            console.error('Ошибка параметров API');
             reject(new Error('Ошибка параметров API'));
             return;
         }
@@ -178,30 +181,36 @@ function setupEventListeners() {
     });
 }
 
+// Обработчик PWA установки
+window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    console.log('PWA может быть установлено');
+});
+
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
     checkAndSetCookies(); // Проверяем и устанавливаем cookie
 
-    // Загрузка FAPI скрипта
+    // Загрузка FAPI скрипта с обработкой ошибок
     const script = document.createElement('script');
     script.src = 'https://connect.ok.ru/connect.js';
     script.async = true;
     script.onload = () => {
+        console.log('FAPI загружен, инициализируем...');
         initOKSDK()
             .then(() => {
                 setupEventListeners();
                 showScreen(elements.mainMenu);
             })
             .catch(error => {
-                console.error('Ошибка инициализации:', error);
-                // Режим fallback - игра без SDK
+                console.error('Ошибка инициализации SDK:', error);
                 setupEventListeners();
                 showScreen(elements.mainMenu);
             });
     };
     script.onerror = () => {
-        console.error('Не удалось загрузить FAPI');
-        // Режим fallback
+        console.error('Ошибка загрузки FAPI SDK');
         setupEventListeners();
         showScreen(elements.mainMenu);
     };
