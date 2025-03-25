@@ -73,7 +73,6 @@ playButton.addEventListener('click', async () => {
 // Остальные обработчики событий
 tryAgainButton.addEventListener('click', startGame);
 extraAttemptsButton.addEventListener('click', async () => {
-    await addExtraAttempts()
     addExtraAttempts()
 });
 mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
@@ -121,12 +120,37 @@ function handleGuess(number) {
 }
 
 // Добавление дополнительных попыток
+// Добавление дополнительных попыток через вознаграждаемую рекламу
 function addExtraAttempts() {
-    attemptsLeft += 3;
-    attemptsDisplay.textContent = attemptsLeft;
-    extraAttemptsButton.classList.add('hidden');
-    extraAttemptsUsed = true;
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("FAPI.UI не доступен");
+        return;
+    }
+
+    FAPI.UI.showAd({
+        adType: 'rewarded',
+        callbacks: {
+            onAdLoaded: () => console.log("Вознаграждаемая реклама загружена"),
+            onAdShown: () => console.log("Вознаграждаемая реклама показана"),
+            onAdClosed: (data) => {
+                console.log("Вознаграждаемая реклама закрыта:", data);
+                if (data.success) {
+                    attemptsLeft += 3; // Добавляем попытки после просмотра рекламы
+                    attemptsDisplay.textContent = attemptsLeft;
+                    extraAttemptsButton.classList.add('hidden');
+                    extraAttemptsUsed = true;
+                    console.log("Игрок получил дополнительные попытки");
+                } else {
+                    console.log("Игрок не досмотрел рекламу - бонус не выдан");
+                }
+            },
+            onAdError: (error) => {
+                console.error("Ошибка показа рекламы:", error);
+            }
+        }
+    });
 }
+
 
 // Завершение игры
 function endGame(won) {
