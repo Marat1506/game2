@@ -72,7 +72,10 @@ playButton.addEventListener('click', async () => {
 
 // Остальные обработчики событий
 tryAgainButton.addEventListener('click', startGame);
-extraAttemptsButton.addEventListener('click', addExtraAttempts);
+extraAttemptsButton.addEventListener('click', async () => {
+    await addExtraAttempts()
+    addExtraAttempts()
+});
 mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
 
 // Функция для начала игры
