@@ -1,6 +1,7 @@
 let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
+let adShown = false; // Флаг, предотвращающий повторные показы рекламы
 
 const mainMenu = document.getElementById('main-menu');
 const gameScreen = document.getElementById('game-screen');
@@ -15,18 +16,18 @@ const tryAgainButton = document.getElementById('try-again-button');
 const gameOverMessage = document.getElementById('game-over-message');
 
 // Глобальный callback для FAPI
-window.API_callback = function(method, result, data) {
+window.API_callback = function (method, result, data) {
     console.log("API_callback:", method, result, data);
 };
 
-// Проверяем, загружен ли FAPI, прежде чем инициализировать
+// Проверяем, загружен ли FAPI
 if (typeof FAPI !== 'undefined' && FAPI.Util) {
     var rParams = FAPI.Util.getRequestParameters();
     FAPI.init(rParams["api_server"], rParams["apiconnection"],
-        function() {
+        function () {
             console.log("FAPI успешно инициализирован");
         },
-        function(error) {
+        function (error) {
             console.error("Ошибка инициализации FAPI:", error);
         }
     );
@@ -34,41 +35,39 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
     console.warn("FAPI не загружен");
 }
 
-// Функция для показа обычной рекламы
+// Функция для показа рекламы
 function showRegularAd() {
-    return new Promise((resolve, reject) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI) {
-            console.warn("FAPI.UI не доступен");
-            resolve();
+    return new Promise((resolve) => {
+        if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
+            console.warn("FAPI.UI не доступен или реклама уже была показана");
+            resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
 
+        adShown = true; // Устанавливаем флаг, чтобы реклама не показывалась повторно
+
         FAPI.UI.showAd({
-            adType: 'interstitial', // Обычная реклама (не rewarded)
+            adType: 'interstitial',
             callbacks: {
                 onAdLoaded: () => console.log("Реклама загружена"),
                 onAdShown: () => console.log("Реклама показана"),
                 onAdClosed: () => {
                     console.log("Реклама закрыта");
-                    resolve();
+                    resolve(); // Запускаем игру после закрытия рекламы
                 },
                 onAdError: (error) => {
                     console.error("Ошибка рекламы:", error);
-                    reject(error);
+                    resolve(); // Если ошибка, запускаем игру
                 }
             }
         });
     });
 }
 
-// Обработчик кнопки "Играть" с показом рекламы
+// Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
-    try {
-        await showRegularAd();
-    } catch (error) {
-        console.error("Ошибка при показе рекламы, начинаем игру", error);
-    }
-    startGame();
+    await showRegularAd(); // Ждём закрытия рекламы или ошибки
+    startGame(); // После рекламы запускаем игру
 });
 
 // Остальные обработчики событий
@@ -78,6 +77,8 @@ mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
 
 // Функция для начала игры
 function startGame() {
+    console.log("Игра начинается...");
+    adShown = false; // Сбрасываем флаг рекламы при старте новой игры
     targetNumber = Math.floor(Math.random() * 81) + 1;
     attemptsLeft = 5;
     extraAttemptsUsed = false;
