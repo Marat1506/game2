@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.screen {
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(9, 40px);
+    grid-template-rows: repeat(9, 40px);
+    gap: 5px;
+    margin: 20px auto;
+}
+
+#grid div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ccc;
+    cursor: pointer;
+}
+
+#grid div:hover {
+    background-color: #bbb;
+}
+
+button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
