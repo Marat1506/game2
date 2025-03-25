@@ -132,7 +132,7 @@ function addExtraAttempts() {
         return;
     }
 
-    FAPI.UI.showAd({
+    FAPI.UI.showLoadedAd({
         adType: 'rewarded',
         callbacks: {
             onAdLoaded: () => {
