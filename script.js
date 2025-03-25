@@ -23,6 +23,11 @@ const elements = {
     shop: document.getElementById('shop')
 };
 
+// Проверка third-party cookies и установка заголовка
+function checkAndSetCookies() {
+    document.cookie = "ok_auth=1; SameSite=None; Secure";
+}
+
 // Инициализация OK SDK
 function initOKSDK() {
     return new Promise((resolve, reject) => {
@@ -32,7 +37,11 @@ function initOKSDK() {
         }
 
         const rParams = FAPI.Util.getRequestParameters();
-        
+        if (!rParams["api_server"] || !rParams["apiconnection"]) {
+            reject(new Error('Ошибка параметров API'));
+            return;
+        }
+
         FAPI.init(
             rParams["api_server"], 
             rParams["apiconnection"],
@@ -76,7 +85,7 @@ function processPayment(productId, amount, description, callback) {
     });
 }
 
-// Логика игры (остается без изменений)
+// Логика игры
 function startGame() {
     currentGameId = Date.now();
     targetNumber = Math.floor(Math.random() * 81) + 1;
@@ -171,9 +180,12 @@ function setupEventListeners() {
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
+    checkAndSetCookies(); // Проверяем и устанавливаем cookie
+
     // Загрузка FAPI скрипта
     const script = document.createElement('script');
     script.src = 'https://connect.ok.ru/connect.js';
+    script.async = true;
     script.onload = () => {
         initOKSDK()
             .then(() => {
