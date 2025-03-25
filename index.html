@@ -8,36 +8,36 @@
     <script type="text/javascript" src="//api.ok.ru/js/fapi5.js" defer="defer"></script>
 </head>
 <body>
-    <div id="main-menu" class="screen">
-        <h1>УГАДАЙ ЧИСЛО</h1>
-        <button id="play-button">ИГРАТЬ</button>
-        <div id="shop">
-            <button id="buy-attempts">Купить 10 попыток (59 OK)</button>
-            <button id="buy-win">Гарантированно угадать (100 OK)</button>
-        </div>
-    </div>
+<div id="main-menu" class="screen">
+    <h1>УГАДАЙ ЧИСЛО</h1>
+    <button id="play-button">ИГРАТЬ</button>
+</div>
 
-    <div id="game-screen" class="screen hidden">
-        <h2>ВЫБЕРИТЕ ЧИСЛО</h2>
-        <p>Попыток осталось: <span id="attempts">5</span></p>
-        <div id="grid"></div>
-        <p id="feedback"></p>
+<div id="game-screen" class="screen hidden">
+    <h2>ВЫБЕРИТЕ ЧИСЛО</h2>
+    <p>Попыток осталось: <span id="attempts">5</span></p>
+    <div id="grid"></div>
+    <p id="feedback"></p>
+    <div id="shop">
+        <button id="buy-attempts">Купить 10 попыток (59 OK)</button>
+        <button id="buy-win">Гарантированно угадать (100 OK)</button>
         <button id="extra-attempts" class="hidden">Еще попытки</button>
     </div>
+</div>
 
-    <div id="game-over-screen" class="screen hidden">
-        <h2>Конец игры</h2>
-        <p id="game-over-message"></p>
-        <button id="main-menu-button">ГЛАВНОЕ МЕНЮ</button>
-        <button id="try-again-button">ПОПРОБОВАТЬ ЕЩЕ</button>
-    </div>
+<div id="game-over-screen" class="screen hidden">
+    <h2>Конец игры</h2>
+    <p id="game-over-message"></p>
+    <button id="main-menu-button">ГЛАВНОЕ МЕНЮ</button>
+    <button id="try-again-button">ПОПРОБОВАТЬ ЕЩЕ</button>
+</div>
 
-    <script>
-        console.log("Загрузка FAPI...");
-        setTimeout(() => {
-            console.log("FAPI:", typeof FAPI !== "undefined" ? "Доступен" : "Не найден");
-        }, 3000);
-    </script>
-    <script defer src="script.js"></script>
+<script>
+    console.log("Загрузка FAPI...");
+    setTimeout(() => {
+        console.log("FAPI:", typeof FAPI !== "undefined" ? "Доступен" : "Не найден");
+    }, 3000);
+</script>
+<script defer src="script.js"></script>
 </body>
 </html>

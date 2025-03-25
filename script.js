@@ -14,6 +14,8 @@ const extraAttemptsButton = document.getElementById('extra-attempts');
 const mainMenuButton = document.getElementById('main-menu-button');
 const tryAgainButton = document.getElementById('try-again-button');
 const gameOverMessage = document.getElementById('game-over-message');
+const buyAttemptsButton = document.getElementById('buy-attempts');
+const buyWinButton = document.getElementById('buy-win');
 
 // Глобальный callback для FAPI
 window.API_callback = function (method, result, data) {
@@ -63,7 +65,18 @@ function showRegularAd() {
         });
     });
 }
+buyAttemptsButton.addEventListener('click', () => {
+    // Логика покупки попыток
+    attemptsLeft += 10;
+    attemptsDisplay.textContent = attemptsLeft;
+    feedback.textContent = 'Вы купили 10 дополнительных попыток!';
+});
 
+buyWinButton.addEventListener('click', () => {
+    // Логика гарантированного выигрыша
+    feedback.textContent = `Загаданное число: ${targetNumber}`;
+    // endGame(true);
+});
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
     await showRegularAd(); // Ждём закрытия рекламы или ошибки
@@ -133,6 +146,8 @@ function startGame() {
     attemptsDisplay.textContent = attemptsLeft;
     feedback.textContent = '';
     extraAttemptsButton.classList.add('hidden');
+    buyAttemptsButton.classList.remove('hidden');
+    buyWinButton.classList.remove('hidden');
     generateGrid();
     showScreen(gameScreen);
 }

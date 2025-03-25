@@ -10,6 +10,10 @@ body {
 
 .screen {
     text-align: center;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 .hidden {
@@ -30,6 +34,8 @@ body {
     align-items: center;
     background-color: #ccc;
     cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
 #grid div:hover {
@@ -41,4 +47,47 @@ button {
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#extra-attempts {
+    background-color: #ff9800;
+}
+
+#extra-attempts:hover {
+    background-color: #e68a00;
+}
+
+#shop {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#buy-attempts, #buy-win {
+    background-color: #2196F3;
+}
+
+#buy-attempts:hover, #buy-win:hover {
+    background-color: #0b7dda;
+}
+
+#game-over-screen {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#game-over-message {
+    font-size: 18px;
+    margin: 20px 0;
 }
