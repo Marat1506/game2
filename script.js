@@ -23,7 +23,7 @@ const OK_CONFIG = {
 };
 
 function initOKSDK() {
-    if (typeof OKSDK !== 'undefined') {
+    if (typeof OKSDK !== 'undefined' && OKSDK.Payment) {
         OKSDK.init(OK_CONFIG,
             () => {
                 console.log("OKSDK успешно инициализирован");
@@ -36,7 +36,7 @@ function initOKSDK() {
             }
         );
     } else {
-        console.warn("OKSDK не загружен");
+        console.error("OKSDK.Payment недоступен")
     }
 }
 function initFAPI() {
@@ -71,8 +71,12 @@ window.API_callback = function (method, result, data) {
 // }
 initOKSDK();
 initFAPI();
+setTimeout(() => {
+    console.log("Статус OKSDK:", window.OKSDK?.initCompleted);
+}, 3000);
 // Функция для показа рекламы
 function showRegularAd() {
+
     return new Promise((resolve) => {
         if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
             console.warn("FAPI.UI не доступен или реклама уже была показана");
@@ -100,15 +104,18 @@ function showRegularAd() {
     });
 }
 function setupPayments() {
+    console.log("OKSDK:", typeof OKSDK);
+    console.log("OKSDK.Payment:", OKSDK?.Payment);
     document.getElementById('buy-attempts').addEventListener('click', () => {
         if (typeof OKSDK === 'undefined' || !OKSDK.Payment) {
+            console.log("Попытка платежа", OKSDK?.Payment);
             alert("Платежи недоступны. Попробуйте позже.");
             return;
         }
 
         OKSDK.Payment.show(
             "10 дополнительных попыток",
-            59,
+            1,
             "attempts_" + Date.now(),
             (result) => {
                 if (result === "ok") {
@@ -130,7 +137,7 @@ function setupPayments() {
 
         OKSDK.Payment.show(
             "Гарантированная победа",
-            100,
+            1,
             "win_" + targetNumber + "_" + Date.now(),
             (result) => {
                 if (result === "ok") {
