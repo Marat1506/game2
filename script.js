@@ -21,62 +21,28 @@ const OK_CONFIG = {
     app_id: 512002514780,      // Замените на ваш APP ID
     app_key: 'CNFQFLLGDIHBABABA'   // Замените на ваш публичный ключ
 };
-
-function initOKSDK() {
-    if (typeof OKSDK !== 'undefined' && OKSDK.Payment) {
-        OKSDK.init(OK_CONFIG,
-            () => {
-                console.log("OKSDK успешно инициализирован");
-                document.getElementById('buy-attempts').style.display = 'block';
-                document.getElementById('buy-win').style.display = 'block';
-            },
-            (error) => {
-                console.error("Ошибка OKSDK:", error);
-                document.getElementById('feedback').textContent = "Платежи временно недоступны";
-            }
-        );
-    } else {
-        console.error("OKSDK.Payment недоступен")
-    }
-}
-function initFAPI() {
-    if (typeof FAPI !== 'undefined' && FAPI.Util) {
-        const rParams = FAPI.Util.getRequestParameters();
-        FAPI.init(rParams["api_server"], rParams["apiconnection"],
-            () => console.log("FAPI инициализирован"),
-            (error) => console.error("Ошибка FAPI:", error)
-        );
-    } else {
-        console.warn("FAPI не загружен");
-    }
-}
 // Глобальный callback для FAPI
 window.API_callback = function (method, result, data) {
     console.log("API_callback:", method, result, data);
 };
 
 // Проверяем, загружен ли FAPI
-// if (typeof FAPI !== 'undefined' && FAPI.Util) {
-//     var rParams = FAPI.Util.getRequestParameters();
-//     FAPI.init(rParams["api_server"], rParams["apiconnection"],
-//         function () {
-//             console.log("FAPI успешно инициализирован");
-//         },
-//         function (error) {
-//             console.error("Ошибка инициализации FAPI:", error);
-//         }
-//     );
-// } else {
-//     console.warn("FAPI не загружен");
-// }
-initOKSDK();
-initFAPI();
-setTimeout(() => {
-    console.log("Статус OKSDK:", window.OKSDK?.initCompleted);
-}, 3000);
+if (typeof FAPI !== 'undefined' && FAPI.Util) {
+    var rParams = FAPI.Util.getRequestParameters();
+    FAPI.init(rParams["api_server"], rParams["apiconnection"],
+        function () {
+            console.log("FAPI успешно инициализирован");
+        },
+        function (error) {
+            console.error("Ошибка инициализации FAPI:", error);
+        }
+    );
+} else {
+    console.warn("FAPI не загружен");
+}
+
 // Функция для показа рекламы
 function showRegularAd() {
-
     return new Promise((resolve) => {
         if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
             console.warn("FAPI.UI не доступен или реклама уже была показана");
@@ -103,84 +69,39 @@ function showRegularAd() {
         });
     });
 }
-function setupPayments() {
-    console.log("OKSDK:", typeof OKSDK);
-    console.log("OKSDK.Payment:", OKSDK?.Payment);
-    document.getElementById('buy-attempts').addEventListener('click', () => {
-        if (typeof OKSDK === 'undefined' || !OKSDK.Payment) {
-            console.log("Попытка платежа", OKSDK?.Payment);
-            alert("Платежи недоступны. Попробуйте позже.");
-            return;
-        }
+buyAttemptsButton.addEventListener('click', () => {
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("FAPI.UI не доступен");
+        attemptsLeft += 10;
+        attemptsDisplay.textContent = attemptsLeft;
+        feedback.textContent = 'Вы купили 10 дополнительных попыток! (тестовый режим)';
+        return;
+    }
 
-        OKSDK.Payment.show(
-            "10 дополнительных попыток",
-            1,
-            "attempts_" + Date.now(),
-            (result) => {
-                if (result === "ok") {
-                    attemptsLeft += 10;
-                    attemptsDisplay.textContent = attemptsLeft;
-                    feedback.textContent = "Вы купили 10 попыток!";
-                } else {
-                    feedback.textContent = "Платеж отменен";
-                }
-            }
-        );
-    });
-
-    document.getElementById('buy-win').addEventListener('click', () => {
-        if (typeof OKSDK === 'undefined' || !OKSDK.Payment) {
-            alert("Платежи недоступны. Попробуйте позже.");
-            return;
-        }
-
-        OKSDK.Payment.show(
-            "Гарантированная победа",
-            1,
-            "win_" + targetNumber + "_" + Date.now(),
-            (result) => {
-                if (result === "ok") {
-                    feedback.textContent = `Загаданное число: ${targetNumber}`;
-                    endGame(true);
-                } else {
-                    feedback.textContent = "Платеж отменен";
-                }
-            }
-        );
-    });
-}
-// document.getElementById('buy-attempts').addEventListener('click', function() {
-//     OKSDK.Payment.show(
-//         "10 дополнительных попыток",
-//         59,                           // Цена 59 OK
-//         "extra_attempts_10_" + Date.now(), // Уникальный код
-//         function(result) {
-//             if (result === "ok") {
-//                 attemptsLeft += 10;
-//                 attemptsDisplay.textContent = attemptsLeft;
-//                 feedback.textContent = 'Вы успешно купили 10 попыток!';
-//             } else {
-//                 feedback.textContent = 'Платеж не был завершен';
-//             }
-//         }
-//     );
-// });
-window.addEventListener('message', function(event) {
     try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'payment') {
-            console.log("Платеж завершен:", data.result);
-        }
+        FAPI.UI.showPayment(
+            "10 попыток",                  // name
+            "Дополнительные попытки для игры", // description
+            "attempts_10",                // code
+            59,                           // price (в OK)
+            null,                         // options
+            null,                         // attributes
+            "ok",                         // currency
+            true,                         // callback (не обновлять страницу)
+            null                          // uiConf
+        );
+
     } catch (e) {
-        console.log("Получено сообщение:", event.data);
+        console.error("Ошибка при вызове платежа:", e);
+        feedback.textContent = "Ошибка инициализации платежа";
     }
 });
-// buyWinButton.addEventListener('click', () => {
-//     // Логика гарантированного выигрыша
-//     feedback.textContent = `Загаданное число: ${targetNumber}`;
-//     // endGame(true);
-// });
+
+buyWinButton.addEventListener('click', () => {
+    // Логика гарантированного выигрыша
+    feedback.textContent = `Загаданное число: ${targetNumber}`;
+    // endGame(true);
+});
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
     await showRegularAd(); // Ждём закрытия рекламы или ошибки
@@ -376,7 +297,4 @@ function showScreen(screen) {
 }
 
 // Показываем главное меню при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    setupPayments();
-    showScreen(mainMenu);
-});
+showScreen(mainMenu);
