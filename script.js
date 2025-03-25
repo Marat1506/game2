@@ -1,7 +1,7 @@
 let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
-let adShown = false; // Флаг, предотвращающий повторные показы рекламы
+let adShown = false;
 
 const mainMenu = document.getElementById('main-menu');
 const gameScreen = document.getElementById('game-screen');
@@ -71,7 +71,53 @@ playButton.addEventListener('click', async () => {
 });
 
 // Остальные обработчики событий
-tryAgainButton.addEventListener('click', startGame);
+tryAgainButton.addEventListener('click', () => {
+
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("FAPI.UI не доступен");
+        return;
+    }
+
+    FAPI.UI.loadAd();
+
+    window.API_callback = function (method, result, data) {
+        console.log("API_callback: ", method, result, data);
+
+        if (method === "loadAd") {
+            if (result === "ok" && data === "ready") {
+                console.log("реклама готова к показу");
+                feedback.textContent = "Реклама загрежена...";
+
+                setTimeout(() => {
+                    FAPI.UI.showLoadedAd()
+                }, 1000)
+            }else {
+                console.log("Не удалось загрузить рекламу: ", data)
+                feedback.textContent = "Ошибка загрузки рекламы"
+            }
+        }
+
+        if (method === "showLoadedAd") {
+            if (result === "ok") {
+                if (data === "complete"){
+                    console.log("Реклама полностью  просмотрена")
+                    startGame()
+                }
+
+            }else if(result === "error") {
+                if (data === "skip") {
+                    console.log("Пользователь пропустил рекламу");
+                    feedback.textContent = "Вы пропустили рекламу и не получили бонус";
+                } else {
+                    console.log("Ошибка показа рекламы:", data);
+                    feedback.textContent = "Ошибка показа рекламы: " + data;
+                }
+            }
+        }
+    }
+
+
+});
 extraAttemptsButton.addEventListener('click', async () => {
     addExtraAttempts()
 });
