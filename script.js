@@ -14,33 +14,58 @@ const mainMenuButton = document.getElementById('main-menu-button');
 const tryAgainButton = document.getElementById('try-again-button');
 const gameOverMessage = document.getElementById('game-over-message');
 
+// Инициализация FAPI
 var rParams = FAPI.Util.getRequestParameters();
 FAPI.init(rParams["api_server"], rParams["apiconnection"],
-    function (){
-    alert("Инициализация прошла успешно");
+    function() {
+        console.log("FAPI успешно инициализирован");
     },
-    function (error) {
-    alert("Ошибка инициализации ")
+    function(error) {
+        console.error("Ошибка инициализации FAPI:", error);
     }
-    )
+);
 
-function loadRewardedAd() {
-    FAPI.UI.loadAd();
+// Функция для показа обычной рекламы
+function showRegularAd() {
+    return new Promise((resolve, reject) => {
+        if (typeof FAPI === 'undefined' || !FAPI.UI) {
+            console.warn("FAPI.UI не доступен");
+            resolve();
+            return;
+        }
+
+        FAPI.UI.showAd({
+            adType: 'interstitial', // Обычная реклама (не rewarded)
+            callbacks: {
+                onAdLoaded: () => console.log("Реклама загружена"),
+                onAdShown: () => console.log("Реклама показана"),
+                onAdClosed: () => {
+                    console.log("Реклама закрыта");
+                    resolve();
+                },
+                onAdError: (error) => {
+                    console.error("Ошибка рекламы:", error);
+                    reject(error);
+                }
+            }
+        });
+    });
 }
-// Обработчик кнопки "Играть"
-playButton.addEventListener('click', () => {
-    let rec = loadRewardedAd()
-    console.log("rec = ", rec)
-    startGame()
+
+// Обработчик кнопки "Играть" с показом рекламы
+playButton.addEventListener('click', async () => {
+    try {
+        await showRegularAd();
+        startGame();
+    } catch (error) {
+        console.error("Ошибка при показе рекламы, начинаем игру", error);
+        startGame();
+    }
 });
 
-// Обработчик кнопки "Попробовать еще"
+// Остальные обработчики событий
 tryAgainButton.addEventListener('click', startGame);
-
-// Обработчик кнопки "Еще попытки"
 extraAttemptsButton.addEventListener('click', addExtraAttempts);
-
-// Обработчик кнопки "Главное меню"
 mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
 
 // Функция для начала игры
@@ -55,7 +80,7 @@ function startGame() {
     showScreen(gameScreen);
 }
 
-// Функция для генерации игрового поля
+// Остальные функции без изменений
 function generateGrid() {
     grid.innerHTML = '';
     for (let i = 1; i <= 81; i++) {
@@ -66,7 +91,6 @@ function generateGrid() {
     }
 }
 
-// Функция для обработки выбора числа
 function handleGuess(number) {
     if (number === targetNumber) {
         feedback.textContent = 'УГАДАЛИ!';
@@ -83,7 +107,6 @@ function handleGuess(number) {
     }
 }
 
-// Функция для добавления дополнительных попыток
 function addExtraAttempts() {
     attemptsLeft += 3;
     attemptsDisplay.textContent = attemptsLeft;
@@ -91,7 +114,6 @@ function addExtraAttempts() {
     extraAttemptsUsed = true;
 }
 
-// Функция для завершения игры
 function endGame(won) {
     if (won) {
         gameOverMessage.textContent = 'Поздравляем, вы угадали загаданное число!';
@@ -101,7 +123,6 @@ function endGame(won) {
     showScreen(gameOverScreen);
 }
 
-// Функция для переключения экранов
 function showScreen(screen) {
     mainMenu.classList.add('hidden');
     gameScreen.classList.add('hidden');
