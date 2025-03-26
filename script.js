@@ -47,35 +47,53 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
 }
 
 // Функция для показа рекламы
+// Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI || !canShowAd()) {
+        if (typeof FAPI === 'undefined' || !FAPI.UI) {
             console.warn("FAPI.UI не доступен или реклама уже была показана");
             resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
 
+        let adTimeout = setTimeout(() => {
+            console.warn("Тайм-аут показа рекламы, продолжаем игру...");
+            resolve(); // Если реклама зависла, всё равно запускаем игру
+        }, 5000); // Ограничиваем ожидание рекламы 5 секундами
 
         FAPI.UI.showAd({
             adType: 'interstitial',
             callbacks: {
                 onAdLoaded: () => console.log("Реклама загружена"),
-                onAdShown: () =>{
-                    console.log("Реклама показана")
+                onAdShown: () => {
+                    console.log("Реклама показана");
                     lastAdTime = Date.now();
                 },
                 onAdClosed: () => {
                     console.log("Реклама закрыта");
+                    clearTimeout(adTimeout); // Очищаем таймер, если реклама закрылась
                     resolve(); // Запускаем игру после закрытия рекламы
                 },
                 onAdError: (error) => {
                     console.error("Ошибка рекламы:", error);
-                    resolve(); // Если ошибка, запускаем игру
+                    clearTimeout(adTimeout); // Очищаем таймер при ошибке
+                    resolve(); // Запускаем игру, даже если реклама не работает
                 }
             }
         });
     });
 }
+
+// Обработчик кнопки "Играть"
+playButton.addEventListener('click', async () => {
+    await Promise.race([
+        showRegularAd(),
+        new Promise((resolve) => setTimeout(resolve, 5000)) // Гарантия запуска игры
+    ]);
+
+    startGame(); // Запускаем игру независимо от рекламы
+});
+
 buyAttemptsButton.addEventListener('click', () => {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
