@@ -1,7 +1,7 @@
-// Убираем глобальный флаг adShown, так как он мешает правильному показу рекламы
 let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
+let adShown = false;
 
 const mainMenu = document.getElementById('main-menu');
 const gameScreen = document.getElementById('game-screen');
@@ -21,7 +21,6 @@ const OK_CONFIG = {
     app_id: 512002514780,      // Замените на ваш APP ID
     app_key: 'CNFQFLLGDIHBABABA'   // Замените на ваш публичный ключ
 };
-
 // Глобальный callback для FAPI
 window.API_callback = function (method, result, data) {
     console.log("API_callback:", method, result, data);
@@ -45,11 +44,13 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
 // Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI) {
-            console.warn("FAPI.UI не доступен");
+        if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
+            console.warn("FAPI.UI не доступен или реклама уже была показана");
             resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
+
+        adShown = true; // Устанавливаем флаг, чтобы реклама не показывалась повторно
 
         FAPI.UI.showAd({
             adType: 'interstitial',
@@ -68,31 +69,30 @@ function showRegularAd() {
         });
     });
 }
-
 buyAttemptsButton.addEventListener('click', () => {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
-        console.warn("FAPI не доступен");
-        attemptsLeft += 10; // Тестовый режим
+        console.warn("FAPI.UI не доступен");
+        attemptsLeft += 10;
         attemptsDisplay.textContent = attemptsLeft;
-        feedback.textContent = "10 попыток (тестовый режим)";
+        feedback.textContent = 'Вы купили 10 дополнительных попыток! (тестовый режим)';
         return;
     }
 
     try {
-        FAPI.UI.showPayment({
-            name: "10 попыток",
-            description: "Дополнительные попытки для игры",
-            code: "attempts_10_" + Date.now(),
-            price: 1, // Используйте 1 OK для теста
-            options: null,
-            attributes: JSON.stringify({ item: "attempts" }),
-            currency: "ok",
-            callback: true, // Не обновлять страницу
-            uiConf: null
-        });
+        FAPI.UI.showPayment(
+            "10 попыток",                  // Название товара
+            "Дополнительные попытки",      // Описание
+            "attempts_10",                 // Уникальный код товара
+            1,                            // Цена (в OK)
+            null,                          // Опции (устарело)
+            JSON.stringify({ item: "attempts" }), // Доп. атрибуты
+            "ok",                          // Валюта (OK)
+            true                           // Не обновлять страницу
+        );
+
     } catch (e) {
-        console.error("Ошибка платежа:", e);
-        feedback.textContent = "Ошибка запуска платежа";
+        console.error("Ошибка при вызове платежа:", e);
+        feedback.textContent = "Ошибка инициализации платежа";
     }
 });
 
@@ -101,18 +101,17 @@ buyWinButton.addEventListener('click', () => {
     feedback.textContent = `Загаданное число: ${targetNumber}`;
     // endGame(true);
 });
-
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
     await showRegularAd(); // Ждём закрытия рекламы или ошибки
-    await startGame(); // После рекламы запускаем игру
+    startGame(); // После рекламы запускаем игру
 });
 
-// Обработчик кнопки "Попробовать снова"
+// Остальные обработчики событий
 tryAgainButton.addEventListener('click', () => {
+
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
-        startGame(); // Если FAPI не доступен, просто начинаем игру
         return;
     }
 
@@ -124,25 +123,25 @@ tryAgainButton.addEventListener('click', () => {
         if (method === "loadAd") {
             if (result === "ok" && data === "ready") {
                 console.log("реклама готова к показу");
-                feedback.textContent = "Реклама загружена...";
+                feedback.textContent = "Реклама загрежена...";
 
                 setTimeout(() => {
-                    FAPI.UI.showLoadedAd();
-                }, 1000);
-            } else {
-                console.log("Не удалось загрузить рекламу: ", data);
-                feedback.textContent = "Ошибка загрузки рекламы";
-                startGame(); // Если не удалось загрузить, начинаем игру
+                    FAPI.UI.showLoadedAd()
+                }, 1000)
+            }else {
+                console.log("Не удалось загрузить рекламу: ", data)
+                feedback.textContent = "Ошибка загрузки рекламы"
             }
         }
 
         if (method === "showLoadedAd") {
             if (result === "ok") {
-                if (data === "complete" || data === "ad_shown") {
-                    console.log("Реклама полностью просмотрена");
-                    startGame();
+                if (data === "complete"){
+                    console.log("Реклама полностью  просмотрена")
+                    startGame()
                 }
-            } else if (result === "error") {
+
+            }else if(result === "error") {
                 if (data === "skip") {
                     console.log("Пользователь пропустил рекламу");
                     feedback.textContent = "Вы пропустили рекламу и не получили бонус";
@@ -150,18 +149,21 @@ tryAgainButton.addEventListener('click', () => {
                     console.log("Ошибка показа рекламы:", data);
                     feedback.textContent = "Ошибка показа рекламы: " + data;
                 }
-                startGame(); // В любом случае начинаем игру
             }
         }
-    };
-});
+    }
 
-extraAttemptsButton.addEventListener('click', addExtraAttempts);
+
+});
+extraAttemptsButton.addEventListener('click', async () => {
+    addExtraAttempts()
+});
 mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
 
 // Функция для начала игры
 function startGame() {
     console.log("Игра начинается...");
+    adShown = false; // Сбрасываем флаг рекламы при старте новой игры
     targetNumber = Math.floor(Math.random() * 81) + 1;
     attemptsLeft = 5;
     extraAttemptsUsed = false;
@@ -202,6 +204,8 @@ function handleGuess(number) {
     }
 }
 
+// Добавление дополнительных попыток
+// Добавление дополнительных попыток через вознаграждаемую рекламу
 // Добавление дополнительных попыток через вознаграждаемую рекламу
 function addExtraAttempts() {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
@@ -242,14 +246,13 @@ function addExtraAttempts() {
                     giveExtraAttempts();
                 }
                 // Для Android
-                // else if (data === "ad_shown") {
-                //     console.log("Реклама полностью просмотрена (Android)");
-                //     giveExtraAttempts();
-                // }
+                else if (data === "ad_shown") {
+                    console.log("Реклама полностью просмотрена (Android)");
+                    giveExtraAttempts();
+                }
                 // Дополнительное событие с форматом рекламы
                 else if (data && data.includes("rewarded")) {
                     console.log("Реклама показана, формат:", data);
-                    giveExtraAttempts();
                 }
             }
             else if (result === "error") {
@@ -275,6 +278,7 @@ function giveExtraAttempts() {
     console.log("Дополнительные попытки выданы");
 }
 
+
 // Завершение игры
 function endGame(won) {
     gameOverMessage.textContent = won
@@ -290,11 +294,6 @@ function showScreen(screen) {
     gameOverScreen.classList.add('hidden');
     screen.classList.remove('hidden');
 }
-
-// Показываем рекламу при загрузке страницы
-document.addEventListener("DOMContentLoaded", async () => {
-    await showRegularAd();
-});
 
 // Показываем главное меню при загрузке
 showScreen(mainMenu);
