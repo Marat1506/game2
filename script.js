@@ -294,6 +294,8 @@ function showScreen(screen) {
     gameOverScreen.classList.add('hidden');
     screen.classList.remove('hidden');
 }
-
+document.addEventListener("DOMContentLoaded", async() => {
+    await showRegularAd()
+});
 // Показываем главное меню при загрузке
 showScreen(mainMenu);
