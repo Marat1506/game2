@@ -44,13 +44,12 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
 // Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
+        if (typeof FAPI === 'undefined' || !FAPI.UI) {
             console.warn("FAPI.UI не доступен или реклама уже была показана");
             resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
 
-        adShown = true; // Устанавливаем флаг, чтобы реклама не показывалась повторно
 
         FAPI.UI.showAd({
             adType: 'interstitial',
@@ -103,8 +102,9 @@ buyWinButton.addEventListener('click', () => {
 });
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
+    startGame()
     await showRegularAd(); // Ждём закрытия рекламы или ошибки
-    setTimeout(startGame, 100); // После рекламы запускаем игру
+
 });
 
 // Остальные обработчики событий
