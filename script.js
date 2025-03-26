@@ -2,6 +2,7 @@ let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
 let adShown = false;
+let lastAdTime = 0;
 
 const mainMenu = document.getElementById('main-menu');
 const gameScreen = document.getElementById('game-screen');
@@ -21,6 +22,10 @@ const OK_CONFIG = {
     app_id: 512002514780,      // Замените на ваш APP ID
     app_key: 'CNFQFLLGDIHBABABA'   // Замените на ваш публичный ключ
 };
+function canShowAd() {
+    const now = Date.now();
+    return now - lastAdTime >= 120000; // Проверяем, прошло ли 2 минуты
+}
 // Глобальный callback для FAPI
 window.API_callback = function (method, result, data) {
     console.log("API_callback:", method, result, data);
@@ -55,7 +60,10 @@ function showRegularAd() {
             adType: 'interstitial',
             callbacks: {
                 onAdLoaded: () => console.log("Реклама загружена"),
-                onAdShown: () => console.log("Реклама показана"),
+                onAdShown: () =>{
+                    console.log("Реклама показана")
+                    lastAdTime = Date.now();
+                },
                 onAdClosed: () => {
                     console.log("Реклама закрыта");
                     resolve(); // Запускаем игру после закрытия рекламы
@@ -102,8 +110,11 @@ buyWinButton.addEventListener('click', () => {
 });
 // Обработчик кнопки "Играть"
 playButton.addEventListener('click', async () => {
+    if (canShowAd()) {
+        await showRegularAd(); // Показываем рекламу, если прошло 2 минуты
+    }
     startGame()
-    await showRegularAd(); // Ждём закрытия рекламы или ошибки
+    // await showRegularAd(); // Ждём закрытия рекламы или ошибки
 
 });
 
