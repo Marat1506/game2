@@ -44,11 +44,13 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
 // Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI) {
-            console.warn("FAPI.UI не доступен, реклама не будет показана");
+        if (typeof FAPI === 'undefined' || !FAPI.UI || adShown) {
+            console.warn("FAPI.UI не доступен или реклама уже была показана");
             resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
+
+        adShown = true; // Устанавливаем флаг, чтобы реклама не показывалась повторно
 
         FAPI.UI.showAd({
             adType: 'interstitial',
@@ -57,17 +59,16 @@ function showRegularAd() {
                 onAdShown: () => console.log("Реклама показана"),
                 onAdClosed: () => {
                     console.log("Реклама закрыта");
-                    resolve(); // После закрытия рекламы продолжаем
+                    resolve(); // Запускаем игру после закрытия рекламы
                 },
                 onAdError: (error) => {
                     console.error("Ошибка рекламы:", error);
-                    resolve(); // Если ошибка, продолжаем без рекламы
+                    resolve(); // Если ошибка, запускаем игру
                 }
             }
         });
     });
 }
-
 buyAttemptsButton.addEventListener('click', () => {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
