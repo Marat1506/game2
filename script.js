@@ -1,9 +1,8 @@
-// Основные переменные игры
+// Убираем глобальный флаг adShown, так как он мешает правильному показу рекламы
 let targetNumber;
 let attemptsLeft;
 let extraAttemptsUsed = false;
 
-// Получаем элементы интерфейса
 const mainMenu = document.getElementById('main-menu');
 const gameScreen = document.getElementById('game-screen');
 const gameOverScreen = document.getElementById('game-over-screen');
@@ -18,41 +17,37 @@ const gameOverMessage = document.getElementById('game-over-message');
 const buyAttemptsButton = document.getElementById('buy-attempts');
 const buyWinButton = document.getElementById('buy-win');
 
-// Конфигурация OK API
 const OK_CONFIG = {
-    app_id: 512002514780,
-    app_key: 'CNFQFLLGDIHBABABA'
+    app_id: 512002514780,      // Замените на ваш APP ID
+    app_key: 'CNFQFLLGDIHBABABA'   // Замените на ваш публичный ключ
 };
 
-// Инициализация API при загрузке страницы
-document.addEventListener("DOMContentLoaded", function() {
-    initFAPI();
-    showScreen(mainMenu);
-});
+// Глобальный callback для FAPI
+window.API_callback = function (method, result, data) {
+    console.log("API_callback:", method, result, data);
+};
 
-// Инициализация FAPI
-function initFAPI() {
-    if (typeof FAPI !== 'undefined' && FAPI.Util) {
-        var rParams = FAPI.Util.getRequestParameters();
-        FAPI.init(rParams["api_server"], rParams["apiconnection"],
-            function() {
-                console.log("FAPI успешно инициализирован");
-            },
-            function(error) {
-                console.error("Ошибка инициализации FAPI:", error);
-            }
-        );
-    } else {
-        console.warn("FAPI не загружен");
-    }
+// Проверяем, загружен ли FAPI
+if (typeof FAPI !== 'undefined' && FAPI.Util) {
+    var rParams = FAPI.Util.getRequestParameters();
+    FAPI.init(rParams["api_server"], rParams["apiconnection"],
+        function () {
+            console.log("FAPI успешно инициализирован");
+        },
+        function (error) {
+            console.error("Ошибка инициализации FAPI:", error);
+        }
+    );
+} else {
+    console.warn("FAPI не загружен");
 }
 
-// Функция показа обычной рекламы
+// Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
         if (typeof FAPI === 'undefined' || !FAPI.UI) {
             console.warn("FAPI.UI не доступен");
-            resolve();
+            resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
         }
 
@@ -63,78 +58,110 @@ function showRegularAd() {
                 onAdShown: () => console.log("Реклама показана"),
                 onAdClosed: () => {
                     console.log("Реклама закрыта");
-                    resolve();
+                    resolve(); // Запускаем игру после закрытия рекламы
                 },
                 onAdError: (error) => {
                     console.error("Ошибка рекламы:", error);
-                    resolve();
+                    resolve(); // Если ошибка, запускаем игру
                 }
             }
         });
     });
 }
 
-// Обработчики кнопок
-playButton.addEventListener('click', async function() {
-    await showRegularAd();
-    startGame();
+buyAttemptsButton.addEventListener('click', () => {
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("FAPI не доступен");
+        attemptsLeft += 10; // Тестовый режим
+        attemptsDisplay.textContent = attemptsLeft;
+        feedback.textContent = "10 попыток (тестовый режим)";
+        return;
+    }
+
+    try {
+        FAPI.UI.showPayment({
+            name: "10 попыток",
+            description: "Дополнительные попытки для игры",
+            code: "attempts_10_" + Date.now(),
+            price: 1, // Используйте 1 OK для теста
+            options: null,
+            attributes: JSON.stringify({ item: "attempts" }),
+            currency: "ok",
+            callback: true, // Не обновлять страницу
+            uiConf: null
+        });
+    } catch (e) {
+        console.error("Ошибка платежа:", e);
+        feedback.textContent = "Ошибка запуска платежа";
+    }
 });
 
-tryAgainButton.addEventListener('click', function() {
-    showRewardedAd(startGame);
+buyWinButton.addEventListener('click', () => {
+    // Логика гарантированного выигрыша
+    feedback.textContent = `Загаданное число: ${targetNumber}`;
+    // endGame(true);
 });
 
-extraAttemptsButton.addEventListener('click', function() {
-    showRewardedAd(function() {
-        giveExtraAttempts();
-    });
+// Обработчик кнопки "Играть"
+playButton.addEventListener('click', async () => {
+    await showRegularAd(); // Ждём закрытия рекламы или ошибки
+    await startGame(); // После рекламы запускаем игру
 });
 
-mainMenuButton.addEventListener('click', function() {
-    showScreen(mainMenu);
-});
-
-// Показ вознаграждаемой рекламы
-function showRewardedAd(callback) {
+// Обработчик кнопки "Попробовать снова"
+tryAgainButton.addEventListener('click', () => {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
-        callback();
+        startGame(); // Если FAPI не доступен, просто начинаем игру
         return;
     }
 
     FAPI.UI.loadAd();
 
-    window.API_callback = function(method, result, data) {
-        console.log("API_callback:", method, result, data);
+    window.API_callback = function (method, result, data) {
+        console.log("API_callback: ", method, result, data);
 
         if (method === "loadAd") {
             if (result === "ok" && data === "ready") {
-                console.log("Реклама готова к показу");
+                console.log("реклама готова к показу");
                 feedback.textContent = "Реклама загружена...";
-                setTimeout(() => FAPI.UI.showLoadedAd(), 1000);
+
+                setTimeout(() => {
+                    FAPI.UI.showLoadedAd();
+                }, 1000);
             } else {
-                console.log("Не удалось загрузить рекламу:", data);
+                console.log("Не удалось загрузить рекламу: ", data);
                 feedback.textContent = "Ошибка загрузки рекламы";
-                callback();
+                startGame(); // Если не удалось загрузить, начинаем игру
             }
         }
 
         if (method === "showLoadedAd") {
-            if (result === "ok" && (data === "complete" || data === "ad_shown")) {
-                console.log("Реклама просмотрена");
-                callback();
+            if (result === "ok") {
+                if (data === "complete" || data === "ad_shown") {
+                    console.log("Реклама полностью просмотрена");
+                    startGame();
+                }
             } else if (result === "error") {
-                console.log("Ошибка показа рекламы:", data);
-                feedback.textContent = "Ошибка показа рекламы";
-                callback();
+                if (data === "skip") {
+                    console.log("Пользователь пропустил рекламу");
+                    feedback.textContent = "Вы пропустили рекламу и не получили бонус";
+                } else {
+                    console.log("Ошибка показа рекламы:", data);
+                    feedback.textContent = "Ошибка показа рекламы: " + data;
+                }
+                startGame(); // В любом случае начинаем игру
             }
         }
     };
-}
+});
 
-// Основные функции игры
+extraAttemptsButton.addEventListener('click', addExtraAttempts);
+mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
+
+// Функция для начала игры
 function startGame() {
-    console.log("Запуск игры...");
+    console.log("Игра начинается...");
     targetNumber = Math.floor(Math.random() * 81) + 1;
     attemptsLeft = 5;
     extraAttemptsUsed = false;
@@ -147,6 +174,7 @@ function startGame() {
     showScreen(gameScreen);
 }
 
+// Функция генерации сетки
 function generateGrid() {
     grid.innerHTML = '';
     for (let i = 1; i <= 81; i++) {
@@ -157,6 +185,7 @@ function generateGrid() {
     }
 }
 
+// Обработка попыток угадать число
 function handleGuess(number) {
     if (number === targetNumber) {
         feedback.textContent = 'УГАДАЛИ!';
@@ -173,14 +202,80 @@ function handleGuess(number) {
     }
 }
 
+// Добавление дополнительных попыток через вознаграждаемую рекламу
+function addExtraAttempts() {
+    if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        console.warn("FAPI.UI не доступен");
+        // Для тестирования даем попытки даже без FAPI
+        giveExtraAttempts();
+        return;
+    }
+
+    // Сначала загружаем рекламу
+    FAPI.UI.loadAd();
+
+    // Обрабатываем коллбеки через глобальную функцию API_callback
+    window.API_callback = function(method, result, data) {
+        console.log("API_callback:", method, result, data);
+
+        if (method === "loadAd") {
+            if (result === "ok" && data === "ready") {
+                // Реклама загружена, можно показывать
+                console.log("Реклама готова к показу");
+                feedback.textContent = "Реклама загружена...";
+
+                // Показываем рекламу через 1 секунду (можно сразу)
+                setTimeout(() => {
+                    FAPI.UI.showLoadedAd();
+                }, 1000);
+            } else {
+                console.log("Не удалось загрузить рекламу:", data);
+                feedback.textContent = "Ошибка загрузки рекламы";
+            }
+        }
+
+        if (method === "showLoadedAd") {
+            if (result === "ok") {
+                // Для web/mobile web
+                if (data === "complete") {
+                    console.log("Реклама полностью просмотрена (web)");
+                    giveExtraAttempts();
+                }
+                // Для Android
+                // else if (data === "ad_shown") {
+                //     console.log("Реклама полностью просмотрена (Android)");
+                //     giveExtraAttempts();
+                // }
+                // Дополнительное событие с форматом рекламы
+                else if (data && data.includes("rewarded")) {
+                    console.log("Реклама показана, формат:", data);
+                    giveExtraAttempts();
+                }
+            }
+            else if (result === "error") {
+                if (data === "skip") {
+                    console.log("Пользователь пропустил рекламу");
+                    feedback.textContent = "Вы пропустили рекламу и не получили бонус";
+                } else {
+                    console.log("Ошибка показа рекламы:", data);
+                    feedback.textContent = "Ошибка показа рекламы: " + data;
+                }
+            }
+        }
+    };
+}
+
+// Функция для выдачи награды
 function giveExtraAttempts() {
     attemptsLeft += 3;
     attemptsDisplay.textContent = attemptsLeft;
     extraAttemptsButton.classList.add('hidden');
     extraAttemptsUsed = true;
     feedback.textContent = "Вы получили 3 дополнительные попытки!";
+    console.log("Дополнительные попытки выданы");
 }
 
+// Завершение игры
 function endGame(won) {
     gameOverMessage.textContent = won
         ? 'Поздравляем, вы угадали загаданное число!'
@@ -188,6 +283,7 @@ function endGame(won) {
     showScreen(gameOverScreen);
 }
 
+// Переключение экранов
 function showScreen(screen) {
     mainMenu.classList.add('hidden');
     gameScreen.classList.add('hidden');
@@ -195,33 +291,10 @@ function showScreen(screen) {
     screen.classList.remove('hidden');
 }
 
-// Покупки (демо-реализация)
-buyAttemptsButton.addEventListener('click', function() {
-    if (typeof FAPI === 'undefined' || !FAPI.UI) {
-        attemptsLeft += 10;
-        attemptsDisplay.textContent = attemptsLeft;
-        feedback.textContent = "10 попыток (тестовый режим)";
-        return;
-    }
-
-    try {
-        FAPI.UI.showPayment({
-            name: "10 попыток",
-            description: "Дополнительные попытки для игры",
-            code: "attempts_10_" + Date.now(),
-            price: 1,
-            options: null,
-            attributes: JSON.stringify({ item: "attempts" }),
-            currency: "ok",
-            callback: true,
-            uiConf: null
-        });
-    } catch (e) {
-        console.error("Ошибка платежа:", e);
-        feedback.textContent = "Ошибка запуска платежа";
-    }
+// Показываем рекламу при загрузке страницы
+document.addEventListener("DOMContentLoaded", async () => {
+    await showRegularAd();
 });
 
-buyWinButton.addEventListener('click', function() {
-    feedback.textContent = `Загаданное число: ${targetNumber}`;
-});
+// Показываем главное меню при загрузке
+showScreen(mainMenu);
