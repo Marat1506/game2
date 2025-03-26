@@ -49,7 +49,7 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
 // Функция для показа рекламы
 function showRegularAd() {
     return new Promise((resolve) => {
-        if (typeof FAPI === 'undefined' || !FAPI.UI) {
+        if (typeof FAPI === 'undefined' || !FAPI.UI || !canShowAd()) {
             console.warn("FAPI.UI не доступен или реклама уже была показана");
             resolve(); // Если реклама недоступна, сразу запускаем игру
             return;
@@ -215,9 +215,6 @@ function handleGuess(number) {
     }
 }
 
-// Добавление дополнительных попыток
-// Добавление дополнительных попыток через вознаграждаемую рекламу
-// Добавление дополнительных попыток через вознаграждаемую рекламу
 function addExtraAttempts() {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
         console.warn("FAPI.UI не доступен");
