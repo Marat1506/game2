@@ -46,8 +46,7 @@ if (typeof FAPI !== 'undefined' && FAPI.Util) {
     console.warn("FAPI не загружен");
 }
 
-// Функция для показа рекламы
-// Функция для показа рекламы
+
 function showRegularAd() {
     return new Promise((resolve) => {
         if (typeof FAPI === 'undefined' || !FAPI.UI) {
@@ -59,7 +58,7 @@ function showRegularAd() {
         let adTimeout = setTimeout(() => {
             console.warn("Тайм-аут показа рекламы, продолжаем игру...");
             resolve(); // Если реклама зависла, всё равно запускаем игру
-        }, 5000); // Ограничиваем ожидание рекламы 5 секундами
+        }, 2000); // Ограничиваем ожидание рекламы 5 секундами
 
         FAPI.UI.showAd({
             adType: 'interstitial',
