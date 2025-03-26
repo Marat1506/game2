@@ -71,28 +71,28 @@ function showRegularAd() {
 }
 buyAttemptsButton.addEventListener('click', () => {
     if (typeof FAPI === 'undefined' || !FAPI.UI) {
-        console.warn("FAPI.UI не доступен");
-        attemptsLeft += 10;
+        console.warn("FAPI не доступен");
+        attemptsLeft += 10; // Тестовый режим
         attemptsDisplay.textContent = attemptsLeft;
-        feedback.textContent = 'Вы купили 10 дополнительных попыток! (тестовый режим)';
+        feedback.textContent = "10 попыток (тестовый режим)";
         return;
     }
 
     try {
-        FAPI.UI.showPayment(
-            "10 попыток",                  // Название товара
-            "Дополнительные попытки",      // Описание
-            "attempts_10",                 // Уникальный код товара
-            1,                            // Цена (в OK)
-            null,                          // Опции (устарело)
-            JSON.stringify({ item: "attempts" }), // Доп. атрибуты
-            "ok",                          // Валюта (OK)
-            true                           // Не обновлять страницу
-        );
-
+        FAPI.UI.showPayment({
+            name: "10 попыток",
+            description: "Дополнительные попытки для игры",
+            code: "attempts_10_" + Date.now(),
+            price: 1, // Используйте 1 OK для теста
+            options: null,
+            attributes: JSON.stringify({ item: "attempts" }),
+            currency: "ok",
+            callback: true, // Не обновлять страницу
+            uiConf: null
+        });
     } catch (e) {
-        console.error("Ошибка при вызове платежа:", e);
-        feedback.textContent = "Ошибка инициализации платежа";
+        console.error("Ошибка платежа:", e);
+        feedback.textContent = "Ошибка запуска платежа";
     }
 });
 
