@@ -80,15 +80,14 @@ buyAttemptsButton.addEventListener('click', () => {
 
     try {
         FAPI.UI.showPayment(
-            "10 попыток",                  // name
-            "Дополнительные попытки для игры", // description
-            "attempts_10",                // code
-            59,                           // price (в OK)
-            null,                         // options
-            null,                         // attributes
-            "ok",                         // currency
-            true,                         // callback (не обновлять страницу)
-            null                          // uiConf
+            "10 попыток",                  // Название товара
+            "Дополнительные попытки",      // Описание
+            "attempts_10",                 // Уникальный код товара
+            1,                            // Цена (в OK)
+            null,                          // Опции (устарело)
+            JSON.stringify({ item: "attempts" }), // Доп. атрибуты
+            "ok",                          // Валюта (OK)
+            true                           // Не обновлять страницу
         );
 
     } catch (e) {
